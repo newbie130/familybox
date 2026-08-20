@@ -1,0 +1,11 @@
+# Secrets: WiFi password and relay token live in sdkconfig, never in git
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/build/
+firmware/managed_components/
+firmware/dependencies.lock
+relay/.env
+relay/media/
+vendor/
+__pycache__/
+*.pyc

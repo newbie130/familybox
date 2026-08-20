@@ -1,0 +1,23 @@
+idf_component_register(
+    SRCS
+        "familybox_main.c"
+        "fb_store.c"
+        "fb_net.c"
+        "fb_audio.c"
+        "fb_ui.c"
+        "fb_power.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        nvs_flash
+        esp_wifi
+        esp_netif
+        esp_event
+        esp_http_client
+        esp-tls
+        json
+        driver
+        esp_lcd
+        esp_timer
+        espressif__esp_lcd_touch
+        espressif__esp_lvgl_port
+)

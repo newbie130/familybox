@@ -1,0 +1,33 @@
+menu "Familybox"
+
+config FB_WIFI_SSID
+    string "WiFi SSID"
+    default "myssid"
+    help
+        2.4 GHz only - the ESP32-S3 has no 5 GHz radio.
+
+config FB_WIFI_PASSWORD
+    string "WiFi password"
+    default ""
+
+config FB_RELAY_URL
+    string "Relay base URL"
+    default "http://192.168.1.10:8090"
+    help
+        No trailing slash. Use https:// once the Cloudflare Tunnel is up.
+
+config FB_RELAY_TOKEN
+    string "Relay bearer token"
+    default "changeme"
+
+config FB_POLL_SECONDS
+    int "Seconds between inbox polls"
+    default 20
+    range 5 600
+
+config FB_MAX_RECORD_SECONDS
+    int "Maximum voice reply length"
+    default 30
+    range 5 120
+
+endmenu

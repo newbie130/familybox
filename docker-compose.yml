@@ -1,0 +1,28 @@
+services:
+  relay:
+    build: ./relay
+    image: familybox-relay:latest
+    container_name: familybox-relay
+    restart: unless-stopped
+    env_file: ./relay/.env
+    environment:
+      # Wins over env_file, so a stray FAMILYBOX_DATA cannot break startup.
+      FAMILYBOX_DATA: /data
+    ports:
+      # Reachable on the home LAN, because the device polls it from there.
+      # The bearer token is what protects it; your router already blocks
+      # inbound traffic from the internet. Do NOT port-forward this.
+      - "8090:8080"
+    volumes:
+      - familybox-media:/data
+    # A microphone in a child's bedroom deserves a small blast radius.
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  familybox-media:

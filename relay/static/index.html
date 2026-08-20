@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#111827">
+<link rel="manifest" href="/app.webmanifest">
+<link rel="apple-touch-icon" href="/icon.svg">
+<title>Familybox</title>
+<style>
+  :root {
+    --bg: #111827; --card: #1b2536; --line: #2b3a52;
+    --fg: #e8eef7; --muted: #93a3bb;
+    --green: #2ec46b; --red: #e53e3e; --amber: #f5a623;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  /* An id or class selector with a display rule outbids the browser's
+     [hidden] { display: none }, so `hidden` silently stops working. This
+     puts it back for every element. */
+  [hidden] { display: none !important; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  header {
+    padding: 18px 20px 12px; display: flex; align-items: center; gap: 10px;
+    position: sticky; top: 0; background: var(--bg); z-index: 5;
+  }
+  header h1 { font-size: 20px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+  #net { margin-left: auto; font-size: 12px; color: var(--muted); }
+  main { padding: 0 16px 40px; max-width: 620px; margin: 0 auto; }
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 16px; padding: 16px; margin-bottom: 16px;
+  }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em;
+       color: var(--muted); margin: 0 0 12px; font-weight: 600; }
+  button {
+    font: inherit; color: var(--fg); background: #253148;
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; width: 100%; cursor: pointer;
+  }
+  button:active { transform: scale(0.99); }
+  button:disabled { opacity: 0.45; }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  .rec { background: var(--red); border-color: transparent; font-weight: 600; }
+  .rec.on { animation: pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.55; } }
+  .send { background: var(--green); border-color: transparent;
+          color: #06210f; font-weight: 700; margin-top: 12px; }
+  .thumb { width: 100%; border-radius: 12px; display: block; margin-bottom: 10px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px;
+          color: var(--muted); margin-top: 8px; }
+  .reply { display: flex; align-items: center; gap: 12px; padding: 12px 0;
+           border-bottom: 1px solid var(--line); }
+  .reply:last-child { border-bottom: 0; }
+  .play { width: 46px; height: 46px; flex: 0 0 46px; border-radius: 50%;
+          background: var(--green); color: #06210f; border: 0;
+          font-size: 17px; padding: 0; display: grid; place-items: center; }
+  .save { width: 42px; height: 42px; flex: 0 0 42px; border-radius: 50%;
+          background: #253148; border: 1px solid var(--line); color: var(--fg);
+          font-size: 17px; padding: 0; display: grid; place-items: center;
+          margin-left: auto; }
+  .meta { font-size: 14px; }
+  .meta small { display: block; color: var(--muted); font-size: 12px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 6px 0; }
+  input[type=file] { display: none; }
+  #cropper {
+    position: fixed; inset: 0; background: #05080f; z-index: 30;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 16px; padding: 20px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  #cropFrame {
+    width: min(88vw, 380px); aspect-ratio: 368 / 448;
+    overflow: hidden; position: relative; border-radius: 14px;
+    background: #000; touch-action: none; cursor: grab;
+    box-shadow: 0 0 0 2px var(--line);
+  }
+  #cropImg {
+    position: absolute; left: 0; top: 0;
+    transform-origin: 0 0; will-change: transform;
+    -webkit-user-select: none; user-select: none; pointer-events: none;
+  }
+  #cropHint { color: var(--muted); font-size: 13px; text-align: center; }
+  #cropBar { display: flex; gap: 10px; width: min(88vw, 380px); }
+  #cropBar button { flex: 1; }
+  #cropOk { background: var(--green); color: #06210f; font-weight: 700;
+            border-color: transparent; }
+  #toast {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    background: #0b1220; border: 1px solid var(--line); color: var(--fg);
+    padding: 11px 16px; border-radius: 12px; font-size: 14px;
+    opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20;
+    max-width: 90vw;
+  }
+  #toast.show { opacity: 1; }
+  #setup { padding: 24px 16px; max-width: 460px; margin: 0 auto; }
+  #setup input { width: 100%; padding: 14px; font: inherit; border-radius: 12px;
+                 border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+</style>
+</head>
+<body>
+
+<div id="setup" hidden>
+  <h1 style="font-size:22px">Familybox</h1>
+  <p style="color:var(--muted);font-size:14px">
+    Paste the relay token (<code>FAMILYBOX_TOKEN</code> from <code>relay/.env</code>).
+    It is stored only on this device.
+  </p>
+  <input id="tokenInput" type="password" placeholder="Relay token" autocomplete="off">
+  <button class="send" id="saveToken" style="margin-top:12px">Save</button>
+  <p id="setupErr" style="color:var(--red);font-size:13px"></p>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <h1>Familybox</h1>
+    <span id="net">checking…</span>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Send home</h2>
+      <img id="preview" class="thumb" hidden alt="">
+      <div class="row">
+        <button id="pickBtn">Choose photo</button>
+        <button id="recBtn" class="rec">Record voice</button>
+      </div>
+      <input id="file" type="file" accept="image/*">
+      <div class="chip" id="status">Nothing attached yet</div>
+      <button class="send" id="sendBtn" disabled>Send</button>
+    </section>
+
+    <section class="card">
+      <h2>From home</h2>
+      <div id="replies"><div class="empty">Nothing yet.</div></div>
+    </section>
+  </main>
+</div>
+
+<div id="cropper" hidden>
+  <div id="cropFrame"><img id="cropImg" alt=""></div>
+  <div id="cropHint">Drag to move &middot; pinch to zoom<br>This is exactly what the device will show.</div>
+  <div id="cropBar">
+    <button id="cropCancel">Cancel</button>
+    <button id="cropOk">Use photo</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const KEY = 'familybox.token';
+let token = localStorage.getItem(KEY) || '';
+let photoBlob = null, photoName = '', audioBlob = null, audioMs = 0;
+let recorder = null, chunks = [], recStart = 0, seen = 0;
+
+function toast(msg, ms = 2600) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+const api = (path, opts = {}) => fetch(path, {
+  ...opts,
+  headers: { ...(opts.headers || {}), Authorization: 'Bearer ' + token },
+});
+
+/* ---------- setup ---------- */
+async function checkToken(t) {
+  const r = await fetch('/api/v1/inbox?since=0&limit=1',
+                        { headers: { Authorization: 'Bearer ' + t } });
+  return r.ok;
+}
+$('saveToken').onclick = async () => {
+  const t = $('tokenInput').value.trim();
+  if (!t) return;
+  $('setupErr').textContent = '';
+  if (await checkToken(t)) {
+    token = t; localStorage.setItem(KEY, t); start();
+  } else {
+    $('setupErr').textContent = 'That token was rejected by the relay.';
+  }
+};
+
+/* ---------- compose ---------- */
+$('pickBtn').onclick = () => $('file').click();
+$('file').onchange = (e) => {
+  const f = e.target.files[0];
+  if (f) openCropper(f);
+  e.target.value = '';   // so picking the same file twice still fires
+};
+
+$('recBtn').onclick = async () => {
+  if (recorder && recorder.state === 'recording') { recorder.stop(); return; }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    toast('Microphone needs HTTPS — use the Tailscale URL, not the IP.', 5000);
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chunks = [];
+    recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
+    recorder.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      audioBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/mp4' });
+      audioMs = Date.now() - recStart;
+      $('recBtn').textContent = 'Record voice';
+      $('recBtn').classList.remove('on');
+      refresh();
+    };
+    recStart = Date.now();
+    recorder.start();
+    $('recBtn').textContent = 'Stop recording';
+    $('recBtn').classList.add('on');
+  } catch (err) {
+    toast('Microphone blocked: ' + err.name, 4000);
+  }
+};
+
+function refresh() {
+  const bits = [];
+  if (photoBlob) bits.push('photo');
+  if (audioBlob) bits.push((audioMs / 1000).toFixed(1) + 's voice note');
+  $('status').textContent = bits.length ? 'Attached: ' + bits.join(' + ')
+                                        : 'Nothing attached yet';
+  $('sendBtn').disabled = !(photoBlob || audioBlob);
+}
+
+$('sendBtn').onclick = async () => {
+  const fd = new FormData();
+  if (photoBlob) fd.append('photo', photoBlob, photoName);
+  if (audioBlob) fd.append('audio', audioBlob, 'note.m4a');
+  $('sendBtn').disabled = true; $('sendBtn').textContent = 'Sending…';
+  try {
+    const r = await api('/api/v1/send', { method: 'POST', body: fd });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    toast('Sent — it will appear on the device shortly.');
+    photoBlob = null; audioBlob = null; audioMs = 0;
+    $('preview').hidden = true; $('file').value = '';
+    refresh();
+  } catch (e) {
+    toast('Send failed: ' + e.message, 4000);
+  } finally {
+    $('sendBtn').textContent = 'Send';
+    refresh();
+  }
+};
+
+/* ---------- crop ----------
+   The panel is 368x448. Cropping here rather than on the relay means the
+   framing is a decision, not a guess: what you see in the frame is exactly
+   the pixels that reach her screen. */
+const PANEL_W = 368, PANEL_H = 448;
+let crop = null;   // { img, base, scale, tx, ty, frameW, frameH }
+
+function clampCrop() {
+  const dispW = crop.img.naturalWidth * crop.base * crop.scale;
+  const dispH = crop.img.naturalHeight * crop.base * crop.scale;
+  // Never let the frame show empty space.
+  crop.tx = Math.min(0, Math.max(crop.frameW - dispW, crop.tx));
+  crop.ty = Math.min(0, Math.max(crop.frameH - dispH, crop.ty));
+}
+
+function drawCrop() {
+  clampCrop();
+  const k = crop.base * crop.scale;
+  crop.img.style.transform =
+    `translate(${crop.tx}px, ${crop.ty}px) scale(${k})`;
+}
+
+function openCropper(file) {
+  const img = $('cropImg');
+  img.onload = () => {
+    const frame = $('cropFrame').getBoundingClientRect();
+    const base = Math.max(frame.width / img.naturalWidth,
+                          frame.height / img.naturalHeight);
+    crop = {
+      img, base, scale: 1,
+      frameW: frame.width, frameH: frame.height,
+      tx: (frame.width - img.naturalWidth * base) / 2,
+      ty: (frame.height - img.naturalHeight * base) / 2,
+    };
+    img.style.width = img.naturalWidth + 'px';
+    img.style.height = img.naturalHeight + 'px';
+    drawCrop();
+  };
+  img.src = URL.createObjectURL(file);
+  $('cropper').hidden = false;
+}
+
+/* Pointer Events cover both the one-finger drag and the two-finger pinch,
+   and work the same for a mouse when testing on a laptop. */
+const pointers = new Map();
+let pinchStart = 0, pinchScale = 1;
+
+const frameEl = () => $('cropFrame');
+frameEl().addEventListener('pointerdown', (e) => {
+  frameEl().setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    pinchStart = Math.hypot(a.x - b.x, a.y - b.y);
+    pinchScale = crop.scale;
+  }
+});
+frameEl().addEventListener('pointermove', (e) => {
+  if (!crop || !pointers.has(e.pointerId)) return;
+  const prev = pointers.get(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (pointers.size === 1) {
+    crop.tx += e.clientX - prev.x;
+    crop.ty += e.clientY - prev.y;
+    drawCrop();
+  } else if (pointers.size === 2 && pinchStart > 0) {
+    const [a, b] = [...pointers.values()];
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    const next = Math.min(6, Math.max(1, pinchScale * (dist / pinchStart)));
+    // Zoom about the frame centre so the subject does not drift away.
+    const cx = crop.frameW / 2, cy = crop.frameH / 2;
+    const ratio = next / crop.scale;
+    crop.tx = cx - (cx - crop.tx) * ratio;
+    crop.ty = cy - (cy - crop.ty) * ratio;
+    crop.scale = next;
+    drawCrop();
+  }
+});
+function endPointer(e) {
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinchStart = 0;
+}
+frameEl().addEventListener('pointerup', endPointer);
+frameEl().addEventListener('pointercancel', endPointer);
+
+$('cropCancel').onclick = () => { $('cropper').hidden = true; crop = null; };
+
+$('cropOk').onclick = async () => {
+  if (!crop) return;
+  const k = crop.base * crop.scale;
+  // Frame rectangle expressed in source-image pixels.
+  const sx = -crop.tx / k, sy = -crop.ty / k;
+  const sw = crop.frameW / k, sh = crop.frameH / k;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = PANEL_W; canvas.height = PANEL_H;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(crop.img, sx, sy, sw, sh, 0, 0, PANEL_W, PANEL_H);
+
+  const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.92));
+  photoBlob = blob; photoName = 'photo.jpg';
+  const prev = $('preview');
+  prev.src = URL.createObjectURL(blob); prev.hidden = false;
+  $('cropper').hidden = true; crop = null;
+  refresh();
+};
+
+/* ---------- her replies ---------- */
+/* Audio is fetched with the bearer header and turned into a blob URL: an
+   <audio src> cannot carry an Authorization header, and putting the token in
+   the URL would leak it into history and logs. */
+async function playReply(id, btn) {
+  btn.disabled = true;
+  try {
+    const r = await api(`/api/v1/media/${id}/audio.wav`);
+    const url = URL.createObjectURL(await r.blob());
+    const a = new Audio(url);
+    a.onended = () => { URL.revokeObjectURL(url); btn.disabled = false; };
+    await a.play();
+  } catch (e) {
+    toast('Could not play: ' + e.message); btn.disabled = false;
+  }
+}
+
+function fileStamp(ts) {
+  const d = new Date(ts * 1000), p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}-` +
+         `${p(d.getHours())}${p(d.getMinutes())}`;
+}
+
+/* On iOS the share sheet beats a plain download: it can save to Files, hand
+   the clip to Messages, or drop it into Voice Memos. Fall back to a download
+   link on anything that cannot share files. */
+async function saveReply(id, ts, btn) {
+  btn.disabled = true;
+  try {
+    let r = await api(`/api/v1/media/${id}/audio.m4a`);
+    let type = 'audio/mp4', ext = 'm4a';
+    if (!r.ok) {                       // m4a only missing if ffmpeg failed
+      r = await api(`/api/v1/media/${id}/audio.wav`);
+      type = 'audio/wav'; ext = 'wav';
+    }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+
+    const blob = await r.blob();
+    const name = `familybox-${fileStamp(ts)}.${ext}`;
+    const file = new File([blob], name, { type });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: name });
+    } else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      toast('Saved to Downloads');
+    }
+  } catch (e) {
+    if (e.name !== 'AbortError') toast('Could not save: ' + e.message, 4000);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function when(ts) {
+  const d = new Date(ts * 1000), now = Date.now() / 1000;
+  const mins = Math.floor((now - ts) / 60);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + ' min ago';
+  if (mins < 60 * 24) return Math.floor(mins / 60) + ' hr ago';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+async function loadReplies() {
+  try {
+    const r = await api('/api/v1/replies?since=0&limit=50');
+    if (!r.ok) return;
+    const msgs = (await r.json()).messages.reverse();
+    $('net').textContent = 'connected';
+    const box = $('replies');
+    if (!msgs.length) { box.innerHTML = '<div class="empty">Nothing yet.</div>'; return; }
+    box.innerHTML = '';
+    for (const m of msgs) {
+      const row = document.createElement('div');
+      row.className = 'reply';
+      const btn = document.createElement('button');
+      btn.className = 'play'; btn.textContent = '▶';
+      btn.onclick = () => playReply(m.id, btn);
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.innerHTML = `${(m.audio.ms / 1000).toFixed(1)}s<small>${when(m.ts)}</small>`;
+      const save = document.createElement('button');
+      save.className = 'save'; save.textContent = '\u2913';   // downwards arrow to bar
+      save.setAttribute('aria-label', 'Save this voice note');
+      save.onclick = () => saveReply(m.id, m.ts, save);
+      row.append(btn, meta, save);
+      box.append(row);
+    }
+    if (msgs.length && seen && msgs[0].id > seen) toast('New voice note from home');
+    seen = msgs.length ? msgs[0].id : seen;
+  } catch {
+    $('net').textContent = 'offline';
+  }
+}
+
+function start() {
+  $('setup').hidden = true; $('app').hidden = false;
+  refresh(); loadReplies();
+  setInterval(loadReplies, 15000);
+}
+
+(async () => {
+  if (token && await checkToken(token)) start();
+  else { $('setup').hidden = false; }
+})();
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+</body>
+</html>
