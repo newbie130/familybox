@@ -9,6 +9,17 @@ they like — and a red button to record a reply, which comes back to your phone
 
 There is no text anywhere in the child's interface.
 
+<table>
+<tr>
+<td width="42%"><img src="docs/images/phone-app.png" alt="The phone web app: choose a photo, record a voice note, listen to replies"></td>
+<td><img src="docs/images/device.jpg" alt="The device showing a photo with the green play and red record buttons"></td>
+</tr>
+<tr>
+<td align="center"><em>The parent's phone</em></td>
+<td align="center"><em>The child's device</em></td>
+</tr>
+</table>
+
 ## Hardware
 
 - **Waveshare ESP32-S3-Touch-AMOLED-1.8** (368x448 AMOLED, ES8311 codec with
